@@ -106,8 +106,13 @@
         .btn.ghost:hover { background: var(--line); color: var(--text); }
         .btn:disabled { cursor: not-allowed; opacity: 0.5; transform: none; box-shadow: none; }
 
+        /* --- CORRECCIÓN: apariencia estándar + prefijos para number --- */
         input[type="number"] {
+            /* estándar */
+            appearance: textfield;
+            /* motores específicos */
             -moz-appearance: textfield;
+            -webkit-appearance: none;
             text-align: right;
             border: none;
             background: transparent;
@@ -116,9 +121,8 @@
             padding: 14px 0;
             flex-grow: 1;
         }
-        input[type="number"]:focus {
-            outline: none;
-        }
+        input[type="number"]:focus { outline: none; }
+        /* Ocultar spinners en WebKit */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -410,7 +414,7 @@
                 qTotalEl.textContent = Game.totalQuestions;
                 qTextEl.innerHTML = Game.currentQuestionData.text;
                 ansValEl.value = '';
-                ansUnitDisplayEl.textContent = toUnit; // <-- AQUÍ SE ESTABLECE LA UNIDAD FIJA
+                ansUnitDisplayEl.textContent = toUnit; // unidad fija de salida
                 feedbackEl.className = 'feedback';
                 feedbackEl.innerHTML = '';
                 solutionBreakdown.style.display = 'none';
@@ -425,7 +429,7 @@
                 const userVal = parseFloat(ansValEl.value);
                 const { value, toUnit } = Game.currentQuestionData;
 
-                const isCorrect = Math.abs(userVal - value) / (value === 0 ? 1 : value) < 0.015; // 1.5% tolerance
+                const isCorrect = Math.abs(userVal - value) / (value === 0 ? 1 : value) < 0.015; // 1.5% de tolerancia
 
                 // Generar explicación y mostrarla siempre
                 generateLatexExplanation();
@@ -436,7 +440,7 @@
                     Game.streak++;
                     Game.correctAnswers++;
                     updateHUD();
-                    setTimeout(nextQuestion, 2500); // Avanzar a la siguiente pregunta
+                    setTimeout(nextQuestion, 2500);
                 } else {
                     Game.streak = 0;
                     Game.lives--;
@@ -444,7 +448,7 @@
                     showFeedback(`❌ ¡Casi! La respuesta correcta era <strong>${value.toPrecision(4)} ${toUnit}</strong>.`, 'err');
                     
                     if (Game.lives > 0) {
-                        setTimeout(nextQuestion, 3500); // Avanzar si quedan vidas
+                        setTimeout(nextQuestion, 3500);
                     } else {
                         setTimeout(endGame, 3500); 
                     }
@@ -494,7 +498,7 @@
                 if (window.MathJax) MathJax.typesetPromise();
             }
 
-            // ===== AYUDAS VISUALES (ESCALERA Y OTROS) =====
+            // ===== AYUDAS VISUALES =====
             function showHelpVisual() {
                 const { topicKey, fromUnit, toUnit } = Game.currentQuestionData;
                 const topicData = UNITS[topicKey];
@@ -586,4 +590,3 @@
     </script>
 </body>
 </html>
-
