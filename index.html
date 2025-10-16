@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniLab PRO 🧪✨</title>
+    
+    <!-- MathJax para renderizar LaTeX de alta calidad -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        svg: {
+          fontCache: 'global'
+        }
+      };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+
+    <style>
+        /* --- VARIABLES Y ESTILO BASE --- */
+        :root {
+            --bg-dark: #12101c;
+            --panel: #1e1b2e;
+            --line: #3a3552;
+            --text: #f0f0f8;
+            --text-muted: #a09cc2;
+            --accent-glow: #be29ec;
+            --accent-solid: #a020f0;
+            --ok: #00f5a0;
+            --err: #ff4757;
+            --font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-dark);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- ENCABEZADO Y MARCADORES --- */
+        .top-bar {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(30, 27, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid var(--line);
+            margin-bottom: 25px;
+            position: sticky;
+            top: 20px;
+            z-index: 10;
+        }
+        .brand { font-weight: bold; font-size: 1.3em; color: var(--accent-glow); }
+        .stats span { margin-left: 18px; font-weight: 500; }
+
+        /* --- CONTENEDOR PRINCIPAL Y PANTALLAS --- */
+        #game-container { width: 100%; max-width: 550px; }
+        .screen { display: none; }
+        .screen.active { display: block; animation: slideInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1); }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- TARJETAS Y CONTENIDO --- */
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 20px var(--accent-glow-t, rgba(190, 41, 236, 0));
+            transition: box-shadow 0.3s ease;
+        }
+        .center-content { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .avatar { font-size: 5rem; margin-bottom: 10px; cursor: default; transition: transform 0.3s ease; }
+        .avatar:hover { transform: rotate(10deg) scale(1.1); }
+        h1, h2 { margin-top: 0; color: var(--text); }
+        p { line-height: 1.7; color: var(--text-muted); }
+
+        /* --- BOTONES Y FORMULARIOS --- */
+        .btn {
+            width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1em;
+            font-weight: bold; cursor: pointer; transition: all 0.2s ease; margin-top: 15px;
+        }
+        .btn.primary {
+            background: linear-gradient(45deg, var(--accent-solid), var(--accent-glow));
+            color: white; box-shadow: 0 4px 15px rgba(160, 32, 240, 0.4);
+        }
+        .btn.primary:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(160, 32, 240, 0.6); }
+        .btn.ghost { background: transparent; border: 2px solid var(--line); color: var(--text-muted); }
+        .btn.ghost:hover { background: var(--line); color: var(--text); }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; transform: none; box-shadow: none; }
+
+        input {
+            width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--line);
+            background: var(--bg-dark); color: var(--text); font-size: 1.2em;
+            margin-top: 8px; box-sizing: border-box; text-align: center;
+        }
+
+        /* --- PANTALLA DE JUEGO --- */
+        .question-header { display: flex; justify-content: space-between; color: var(--text-muted); margin-bottom: 10px; padding: 0 10px; }
+        .q-text { font-size: 1.9em; text-align: center; margin: 25px 0; color: var(--text); }
+        .q-text strong { color: var(--accent-glow); font-weight: 600; }
+        .answer-box { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; margin: 20px 0; }
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .feedback {
+            margin: 15px 0; padding: 12px; border-radius: 10px; font-weight: bold;
+            min-height: 24px; text-align: center; transition: all 0.3s ease;
+        }
+        .feedback.ok { background: rgba(0, 245, 160, 0.1); color: var(--ok); }
+        .feedback.err { background: rgba(255, 71, 87, 0.1); color: var(--err); }
+        .feedback.hint { background: rgba(160, 32, 240, 0.1); color: var(--accent-solid); }
+
+        /* --- EXPLICACIÓN MATEMÁTICA (LATEX) --- */
+        #solution-breakdown {
+            background: var(--bg-dark); border-radius: 15px; padding: 15px;
+            margin-top: 20px; border: 1px solid var(--line); display: none;
+            overflow-x: auto;
+        }
+        #solution-breakdown p { font-size: 0.9em; margin-bottom: 10px; }
+        #latex-solution { font-size: 1.2em; text-align: center; }
+
+        /* --- NUEVO DISEÑO DE ESCALERA LINEAL --- */
+        .modal-container {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 100;
+        }
+        .modal-container.visible { opacity: 1; pointer-events: all; }
+        .modal-content {
+            background: var(--panel); padding: 30px; border-radius: 20px; width: 90%;
+            max-width: 550px; position: relative; border: 1px solid var(--line);
+            transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .modal-container.visible .modal-content { transform: scale(1); }
+        .modal-close-btn { position: absolute; top: 10px; right: 20px; font-size: 2em; cursor: pointer; color: var(--text-muted); }
+        
+        #staircase-wrapper { padding-top: 30px; }
+        .scale-beam {
+            display: flex;
+            position: relative;
+            background: var(--bg-dark);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+        }
+        .scale-unit {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
+            font-size: 0.9em;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .scale-unit .unit-name { font-weight: bold; display: block; }
+        .scale-unit .unit-prefix { font-size: 0.8em; color: var(--text-muted); }
+        
+        .scale-unit.origin::before, .scale-unit.destination::before {
+            content: attr(data-label);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: white;
+        }
+        .scale-unit.origin { color: white; }
+        .scale-unit.origin::before { background: var(--err); }
+        .scale-unit.destination { color: white; }
+        .scale-unit.destination::before { background: var(--ok); }
+        
+        .scale-path {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .scale-arrow {
+            height: 3px;
+            background: var(--accent-glow);
+            position: relative;
+            border-radius: 3px;
+        }
+        .scale-arrow::after { /* Arrowhead */
+            content: '';
+            position: absolute;
+            right: -2px;
+            top: -4.5px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 8px solid var(--accent-glow);
+        }
+        .scale-arrow.reverse { transform: scaleX(-1); }
+        .scale-arrow.reverse::after { right: auto; left: -2px; }
+
+        .jumps-label {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9em;
+            color: var(--accent-glow);
+            background: var(--panel);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+    <header class="top-bar">
+        <div class="brand">🧪 UniLab PRO</div>
+        <div class="stats">
+            <span>⭐ Puntos: <b id="score">0</b></span>
+            <span>🔥 Racha: <b id="streak">0</b></span>
+            <span>❤️ Vidas: <b id="lives">3</b></span>
+        </div>
+    </header>
+
+    <main id="game-container">
+        <section id="screen-welcome" class="screen active">
+            <div class="card center-content">
+                <div id="avatar" class="avatar">👩‍🔬</div>
+                <h1>¡Bienvenida a UniLab PRO!</h1>
+                <p>El desafío definitivo de conversión de unidades.</p>
+                <input id="name" type="text" placeholder="Escribe tu nombre para empezar" maxlength="20">
+                <button id="start-game" class="btn primary">¡Comenzar Desafío!</button>
+            </div>
+        </section>
+
+        <section id="screen-play" class="screen">
+            <div class="question-header">
+                <span id="q-topic">Longitud</span>
+                <span>Pregunta <b id="q-num">1</b> de <b id="q-total">10</b></span>
+            </div>
+            <div id="question-card" class="card">
+                <p id="q-text" class="q-text">Convierte <strong>5 km</strong> a <strong>m</strong>.</p>
+                <div class="answer-box">
+                    <input id="ans-val" type="number" placeholder="Resultado numérico...">
+                    <input id="ans-unit" type="text" placeholder="...y la unidad">
+                </div>
+                <div id="feedback" class="feedback"></div>
+                <button id="check-btn" class="btn primary">Comprobar</button>
+                <div id="solution-breakdown">
+                    <p><strong>Desglose matemático del cálculo:</strong></p>
+                    <div id="latex-solution"></div>
+                </div>
+            </div>
+
+            <div class="tools-grid">
+                <button id="hint-btn" class="btn ghost">Dame una Pista 💡</button>
+                <button id="staircase-btn" class="btn ghost">Ver Ayuda Visual 🪜</button>
+            </div>
+        </section>
+
+        <section id="screen-end" class="screen">
+            <div class="card center-content">
+                <h2>🏁 ¡Partida Terminada!</h2>
+                <p class="final-greeting" style="font-size: 1.2em;">¡Gran trabajo, <b id="final-name">Jugadora</b>! 🎉</p>
+                <div style="margin: 20px 0;">
+                    <p style="font-size: 1.1em; color: var(--text);">Puntuación Final: <b id="final-score">0</b></p>
+                    <p style="font-size: 1.1em; color: var(--text);">Precisión: <b id="final-acc">0%</b></p>
+                </div>
+                <button id="play-again" class="btn primary">Jugar de Nuevo</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="staircase-modal" class="modal-container">
+        <div class="modal-content">
+            <span id="modal-close" class="modal-close-btn">&times;</span>
+            <h3 id="staircase-title" style="text-align:center;">Ayuda Visual</h3>
+            <div id="staircase-wrapper">
+                <!-- La escalera o la información se insertará aquí -->
+            </div>
+            <p id="staircase-note" class="note" style="text-align:center;"></p>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ===== SELECTORES DE ELEMENTOS DEL DOM =====
+            const $ = (s) => document.querySelector(s);
+            const screens = { welcome: $('#screen-welcome'), play: $('#screen-play'), end: $('#screen-end') };
+            const scoreEl = $('#score'), streakEl = $('#streak'), livesEl = $('#lives');
+            const qTopicEl = $('#q-topic'), qNumEl = $('#q-num'), qTotalEl = $('#q-total');
+            const qTextEl = $('#q-text'), ansValEl = $('#ans-val'), ansUnitEl = $('#ans-unit');
+            const feedbackEl = $('#feedback'), solutionBreakdown = $('#solution-breakdown'), latexSolution = $('#latex-solution');
+            const modal = $('#staircase-modal'), staircaseWrapper = $('#staircase-wrapper');
+            const staircaseTitle = $('#staircase-title'), staircaseNote = $('#staircase-note');
+
+            // ===== BANCO DE UNIDADES AMPLIADO =====
+            const UNITS = {
+                longitud: { name: 'Longitud', type: 'staircase', base: 'm', factor: 10, prefixes: { k: 'Kilo', h: 'Hecto', da: 'Deca', '': 'Metro', d: 'Deci', c: 'Centi', m: 'Mili' } },
+                masa: { name: 'Masa', type: 'staircase', base: 'g', factor: 10, prefixes: { k: 'Kilo', h: 'Hecto', da: 'Deca', '': 'Gramo', d: 'Deci', c: 'Centi', m: 'Mili' } },
+                area: { name: 'Área', type: 'staircase', base: 'm²', factor: 100, prefixes: { k: 'Kilo', h: 'Hecto', da: 'Deca', '': 'Metro²', d: 'Deci', c: 'Centi', m: 'Mili' } },
+                volumen: { name: 'Volumen', type: 'factors', base: 'm³', map: { 'm³': 1, 'L': 1e-3, 'cm³': 1e-6 } }, // CORREGIDO: cambiado a 'factors'
+                presion: { name: 'Presión', type: 'factors', base: 'Pa', map: { atm: 101325, bar: 1e5, kPa: 1e3, hPa: 100, Pa: 1, mmHg: 133.322 } },
+                velocidad: { name: 'Velocidad', type: 'factors', base: 'm/s', map: { 'km/h': 1 / 3.6, 'm/s': 1 } }
+            };
+            const PREFIX_FACTORS = { k: 1e3, h: 1e2, da: 1e1, '': 1, d: 1e-1, c: 1e-2, m: 1e-3 };
+            const TOPICS = Object.keys(UNITS);
+
+            // ===== ESTADO DEL JUEGO =====
+            const Game = { player: 'Jugador/a', totalQuestions: 10, currentQ: 0, score: 0, streak: 0, lives: 3, correctAnswers: 0, currentQuestionData: null };
+
+            // ===== LÓGICA DEL JUEGO =====
+            function showScreen(screenKey) {
+                Object.values(screens).forEach(s => s.classList.remove('active'));
+                screens[screenKey].classList.add('active');
+            }
+
+            function startGame() {
+                Game.player = $('#name').value.trim() || 'Jugador/a';
+                Object.assign(Game, { currentQ: 0, score: 0, streak: 0, lives: 3, correctAnswers: 0 });
+                updateHUD();
+                nextQuestion();
+                showScreen('play');
+            }
+
+            function nextQuestion() {
+                if (Game.currentQ >= Game.totalQuestions || Game.lives <= 0) return endGame();
+                Game.currentQ++;
+                
+                const topicKey = pick(TOPICS);
+                const topicData = UNITS[topicKey];
+                
+                let fromUnit, toUnit, value, finalValue;
+
+                if(topicData.type === 'staircase'){
+                    const prefixKeys = Object.keys(topicData.prefixes);
+                    let fromPrefix = pick(prefixKeys);
+                    let toPrefix;
+                    do { toPrefix = pick(prefixKeys); } while (fromPrefix === toPrefix);
+                    
+                    fromUnit = fromPrefix + topicData.base;
+                    toUnit = toPrefix + topicData.base;
+                    value = Math.floor(Math.random() * 90) + 10;
+                    
+                    const exp = topicData.base.includes('²') ? 2 : topicData.base.includes('³') ? 3 : 1;
+                    const factorFrom = Math.pow(PREFIX_FACTORS[fromPrefix], exp);
+                    const factorTo = Math.pow(PREFIX_FACTORS[toPrefix], exp);
+                    finalValue = (value * factorFrom) / factorTo;
+
+                } else { // Factors type
+                    const unitKeys = Object.keys(topicData.map);
+                    fromUnit = pick(unitKeys);
+                    do { toUnit = pick(unitKeys); } while (fromUnit === toUnit);
+
+                    value = topicKey === 'presion' && fromUnit === 'atm' ? (Math.random() + 0.5).toFixed(1) : Math.floor(Math.random() * 90) + 10;
+                    finalValue = (value * topicData.map[fromUnit]) / topicData.map[toUnit];
+                }
+
+                Game.currentQuestionData = { topicKey, text: `Convierte <strong>${value} ${fromUnit}</strong> a <strong>${toUnit}</strong>.`, value: finalValue, fromValue: value, fromUnit, toUnit };
+                
+                // Actualizar UI
+                qTopicEl.textContent = topicData.name;
+                qNumEl.textContent = Game.currentQ;
+                qTotalEl.textContent = Game.totalQuestions;
+                qTextEl.innerHTML = Game.currentQuestionData.text;
+                [ansValEl, ansUnitEl].forEach(el => el.value = '');
+                feedbackEl.className = 'feedback';
+                feedbackEl.innerHTML = '';
+                solutionBreakdown.style.display = 'none';
+                $('#check-btn').disabled = false;
+                updateHUD();
+            }
+
+            function checkAnswer() {
+                if (!ansValEl.value || !ansUnitEl.value) return showFeedback('Debes ingresar el número y la unidad.', 'err');
+                
+                $('#check-btn').disabled = true;
+                const userVal = parseFloat(ansValEl.value);
+                const userUnit = ansUnitEl.value.trim().toLowerCase();
+                const { value, toUnit } = Game.currentQuestionData;
+
+                const isCorrect = Math.abs(userVal - value) / (value === 0 ? 1 : value) < 0.015 && userUnit === toUnit.toLowerCase(); // 1.5% tolerance
+
+                // Generar explicación y mostrarla siempre
+                generateLatexExplanation();
+
+                if (isCorrect) {
+                    showFeedback('✅ ¡Correcto! ¡Excelente!', 'ok');
+                    Game.score += 100 + (Game.streak * 10);
+                    Game.streak++;
+                    Game.correctAnswers++;
+                    updateHUD();
+                    setTimeout(nextQuestion, 2500); // Avanzar a la siguiente pregunta
+                } else {
+                    Game.streak = 0;
+                    Game.lives--;
+                    updateHUD();
+                    showFeedback(`❌ ¡Casi! La respuesta correcta era <strong>${value.toPrecision(4)} ${toUnit}</strong>.`, 'err');
+                    
+                    if (Game.lives > 0) {
+                        setTimeout(nextQuestion, 3500); // Avanzar si quedan vidas
+                    } else {
+                        // El feedback ya muestra la respuesta, esperamos un poco y terminamos el juego
+                        setTimeout(endGame, 3500); 
+                    }
+                }
+            }
+            
+            function showFeedback(message, type) {
+                feedbackEl.innerHTML = message;
+                feedbackEl.className = 'feedback ' + type;
+            }
+
+            function endGame() {
+                $('#final-name').textContent = Game.player;
+                $('#final-score').textContent = Game.score;
+                const accuracy = Game.currentQ > 0 ? (Game.correctAnswers / Game.currentQ) * 100 : 0;
+                $('#final-acc').textContent = `${accuracy.toFixed(0)}%`;
+                showScreen('end');
+            }
+
+            function updateHUD() {
+                scoreEl.textContent = Game.score;
+                streakEl.textContent = Game.streak;
+                livesEl.textContent = Game.lives;
+            }
+
+            function generateLatexExplanation() {
+                const { fromValue, fromUnit, toUnit, value, topicKey } = Game.currentQuestionData;
+                const topicData = UNITS[topicKey];
+                const formatUnit = u => u.replace('²', '^{2}').replace('³', '^{3}');
+                let latexString = `$$ ${fromValue} \\, \\text{${formatUnit(fromUnit)}} \\times `;
+                
+                if (topicData.type === 'factors') {
+                    latexString += `\\frac{${topicData.map[fromUnit].toPrecision(4)} \\, \\text{${formatUnit(topicData.base)}}}{1 \\, \\text{${formatUnit(fromUnit)}}} \\times \\frac{1 \\, \\text{${formatUnit(toUnit)}}}{${topicData.map[toUnit].toPrecision(4)} \\, \\text{${formatUnit(topicData.base)}}}`;
+                } else { // Staircase
+                    const fromPrefix = fromUnit.replace(topicData.base, '');
+                    const toPrefix = toUnit.replace(topicData.base, '');
+                    const exp = topicData.base.includes('²') ? 2 : topicData.base.includes('³') ? 3 : 1;
+                    const factorFrom = Math.pow(PREFIX_FACTORS[fromPrefix], exp);
+                    const factorTo = Math.pow(PREFIX_FACTORS[toPrefix], exp);
+                    const conversionFactor = factorFrom / factorTo;
+                    latexString += `\\frac{${conversionFactor.toPrecision(4)} \\, \\text{${formatUnit(toUnit)}}}{1 \\, \\text{${formatUnit(fromUnit)}}}`;
+                }
+                
+                latexString += ` = ${value.toPrecision(4)} \\, \\text{${formatUnit(toUnit)}} $$`;
+                latexSolution.innerHTML = latexString;
+                solutionBreakdown.style.display = 'block';
+                if (window.MathJax) MathJax.typesetPromise();
+            }
+
+            // ===== AYUDAS VISUALES (ESCALERA Y OTROS) =====
+            function showHelpVisual() {
+                const { topicKey, fromUnit, toUnit } = Game.currentQuestionData;
+                const topicData = UNITS[topicKey];
+                staircaseTitle.textContent = `Ayuda para ${topicData.name}`;
+
+                if (topicData.type === 'staircase') {
+                    staircaseNote.innerHTML = `Moviéndose a la derecha se multiplica (×${topicData.factor}), a la izquierda se divide (÷${topicData.factor}).`;
+                    staircaseWrapper.innerHTML = '<div class="scale-beam"></div>';
+                    const beam = $('.scale-beam');
+                    const prefixes = Object.keys(topicData.prefixes);
+
+                    prefixes.forEach(prefixKey => {
+                        const unitDiv = document.createElement('div');
+                        unitDiv.className = 'scale-unit';
+                        unitDiv.innerHTML = `<span class="unit-name">${prefixKey}${topicData.base}</span><span class="unit-prefix">${topicData.prefixes[prefixKey]}</span>`;
+                        beam.appendChild(unitDiv);
+
+                        if (fromUnit.startsWith(prefixKey + topicData.base.charAt(0))) {
+                             unitDiv.classList.add('origin');
+                             unitDiv.dataset.label = "Origen";
+                        }
+                        if (toUnit.startsWith(prefixKey + topicData.base.charAt(0))) {
+                             unitDiv.classList.add('destination');
+                             unitDiv.dataset.label = "Destino";
+                        }
+                    });
+                    
+                    // Dibujar la flecha de saltos
+                    setTimeout(() => {
+                        const originEl = $('.scale-unit.origin');
+                        const destEl = $('.scale-unit.destination');
+                        if (!originEl || !destEl) return;
+
+                        const beamRect = beam.getBoundingClientRect();
+                        const originRect = originEl.getBoundingClientRect();
+                        const destRect = destEl.getBoundingClientRect();
+
+                        const fromIndex = prefixes.indexOf(fromUnit.replace(topicData.base, ''));
+                        const toIndex = prefixes.indexOf(toUnit.replace(topicData.base, ''));
+                        const jumps = Math.abs(fromIndex - toIndex);
+
+                        const path = document.createElement('div');
+                        path.className = 'scale-path';
+                        const arrow = document.createElement('div');
+                        arrow.className = 'scale-arrow';
+                        const jumpsLabel = document.createElement('span');
+                        jumpsLabel.className = 'jumps-label';
+                        jumpsLabel.textContent = `${jumps} Salto${jumps > 1 ? 's' : ''}`;
+                        
+                        const start = Math.min(originRect.left, destRect.left) - beamRect.left + originRect.width / 2;
+                        const width = Math.abs(destRect.left - originRect.left);
+
+                        path.style.left = `${start}px`;
+                        path.style.width = `${width}px`;
+                        arrow.style.width = '100%';
+                        if (destRect.left < originRect.left) arrow.classList.add('reverse');
+
+                        path.appendChild(arrow);
+                        path.appendChild(jumpsLabel);
+                        beam.appendChild(path);
+                    }, 50);
+
+                } else { // Para factores directos
+                    staircaseNote.innerHTML = `Estas unidades se convierten usando factores directos a la unidad base: <strong>${topicData.base}</strong>.`;
+                    let factorsHTML = '<ul style="list-style:none; padding-left:0;">';
+                    for(const unit in topicData.map){
+                        factorsHTML += `<li style="margin: 5px 0;"><strong>1 ${unit}</strong> = ${topicData.map[unit]} ${topicData.base}</li>`;
+                    }
+                    factorsHTML += '</ul>';
+                    staircaseWrapper.innerHTML = factorsHTML;
+                }
+                modal.classList.add('visible');
+            }
+
+            function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+            // ===== EVENT LISTENERS =====
+            $('#start-game').addEventListener('click', startGame);
+            $('#play-again').addEventListener('click', () => showScreen('welcome'));
+            $('#check-btn').addEventListener('click', checkAnswer);
+            ansValEl.addEventListener('keyup', e => { if (e.key === 'Enter') $('#check-btn').click(); });
+            ansUnitEl.addEventListener('keyup', e => { if (e.key === 'Enter') $('#check-btn').click(); });
+            $('#hint-btn').addEventListener('click', () => showFeedback(`💡 Pista: Piensa en la relación entre las unidades. ¿El número final será más grande o más pequeño?`, 'hint'));
+            $('#staircase-btn').addEventListener('click', showHelpVisual);
+            $('#modal-close').addEventListener('click', () => modal.classList.remove('visible'));
+            modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('visible'); });
+
+            showScreen('welcome');
+        });
+    </script>
+</body>
+</html>
+
